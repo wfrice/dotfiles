@@ -22,7 +22,7 @@
   (package-refresh-contents))
 
 
-;; Initialize use-package on non-Linux platform
+;; initialize use-package on non-Linux platform
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
@@ -69,3 +69,6 @@
   :ensure t
   :init (doom-modeline-mode 1))
 
+(org-babel-load-file
+ (expand-file-name
+  "config.org" "."))
