@@ -1,5 +1,16 @@
 #+title: Dotfiles
 
+* System Setup
+  :PROPERTIES:
+  :header-args: :tangle test.sh
+  :END:
+
+test setup
+#+begin_src bash
+  #!/bin/bash
+  sudo apt install ripgrep
+#+end_src
+
 * Emacs
   :PROPERTIES:
   :header-args: :tangle ~/.emacs
@@ -13,29 +24,33 @@ other settings
   (tool-bar-mode -1)                    ; Disables the tool bar
   (scroll-bar-mode -1)                  ; Disables the scroll bar
   (global-display-line-numbers-mode)    ; Enables line numbers
+  (dolist (mode '(term-mode-hook
+		  shell-mode-hook
+		  eshell-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
   (setq column-number-mode t)           ; Enables column numbers
-  
-  (load-theme 'wombat)
 
-    ;; Initialize package sources
-    (require 'package)
+  ;; Initialize package sources
+  (require 'package)
 
-    (setq package-archives '(("melpa" . "https://melpa.org/packages/")
-	   ("org" . "https://orgmode.org/elpa/")
-	   ("elpa" . "https://elpa.gnu.org/packages")))
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+			   ("org" . "https://orgmode.org/elpa/")
+			   ("elpa" . "https://elpa.gnu.org/packages/")))
 
-    (package-initialize)
-    (unless package-archive-contents
-    (package-refresh-contents))
+  (package-initialize)
+  (unless package-archive-contents
+  (package-refresh-contents))
 
-    ;; initialize use-package on non-Linux platform
-    (unless (package-installed-p 'use-package)
-    (package-install 'use-package))
+  ;; initialize use-package on non-Linux platform
+  (unless (package-installed-p 'use-package)
+  (package-install 'use-package))
 
-    (require 'use-package)
-    (setq use-package-always-ensure t)
+  (require 'use-package)
+  (setq use-package-always-ensure t)
 
-    (use-package diminish)
+  (use-package diminish)
+
+  (global-set-key (kbd "C-M-j") 'counsel-switch-buffer)
 #+end_src
 
 meghanada (java lsp)
@@ -69,7 +84,8 @@ https://github.com/seagle0128/doom-modeline
 
   (use-package all-the-icons
     :ensure t)
-  ;(all-the-icons-install-fonts)
+  ;; On first install make sure to run the following
+  ;; M-x all-the-icons-install-fonts
 #+end_src
 
 rainbow-delimiters
@@ -157,6 +173,100 @@ https://github.com/Wilfred/helpful
 doom-themes
 https://github.com/doomemacs/themes
 #+begin_src emacs-lisp
-  (use-package doom-themes)
+    (use-package doom-themes
+      :init (load-theme 'doom-tomorrow-night t))
 #+end_src
 
+general.el
+https://github.com/noctuid/general.el
+#+begin_src emacs-lisp
+  (use-package general
+    :config
+    (general-evil-setup t)
+
+    (general-create-definer wrice/leader-keys
+			    :keymaps '(normal insert visual emacs)
+			    :prefix "SPC"
+			    :global-prefix "C-SPC")
+
+    (wrice/leader-keys
+      "t" '(:ignore t :which-key "toggles")
+      "tt" '(counsel-load-theme :which-key "choose theme")))
+#+end_src
+
+evil
+https://github.com/evil-emacs/evil
+#+begin_src emacs-lisp
+  (use-package evil
+    :init
+    (setq evil-want-integration t)
+    (setq evil-want-keybinding nil)
+    (setq evil-want-C-u-scroll t)
+    (setq evil-want-C-i-jump nil)
+    ;; :hook
+    ;; (evil-mode . wrice/evil-hook)
+    :config
+    (evil-mode 1)
+    (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
+    (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
+
+    (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+    (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+
+    (evil-set-initial-state 'messages-buffer-mode 'normal)
+    (evil-set-initial-state 'dashboard-mode 'normal))
+
+  (use-package evil-collection
+    :after evil
+    :config
+    (evil-collection-init))
+#+end_src
+
+hydra
+https://github.com/abo-abo/hydra
+#+begin_src emacs-lisp
+  (use-package hydra)
+
+  (defhydra hydra-text-scale (:timeout 4)
+    "scale text"
+    ("j" text-scale-increase "in")
+    ("k" text-scale-decrease "out")
+    ("f" nil "finished" :exit t))
+
+  (wrice/leader-keys
+    "ts" '(hydra-text-scale/body :which-key "scale text"))
+#+end_src
+
+projectile
+https://github.com/bbatsov/projectile
+#+begin_src emacs-lisp
+  (use-package projectile
+    :diminish
+    projectile-mode
+    :config
+    (projectile-mode)
+    :custom
+    (projectile-completion-system 'ivy)
+    :bind-keymap
+    ("C-c p" . projectile-command-map)
+    :init
+    (when (file-directory-p "~/Documents/Code")
+      (setq projectile-project-search-path '("~/Documents/Code")))
+    (setq projectile-switch-project-action #'projectile-dired))
+
+  (use-package counsel-projectile
+    :config
+    (counsel-projectile-mode))
+#+end_src
+
+magit
+https://github.com/magit/magit
+#+begin_src emacs-lisp
+  (use-package magit
+    :custom
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+  ;; (use-package evil-magit
+  ;;   :after
+  ;;   magit)
+#+end_src
